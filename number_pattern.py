@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
 
 class NumberPattern:
     def __init__(self, csv_file):
@@ -21,28 +20,19 @@ class NumberPattern:
         self.write_data()
         print(f"Data updated: {self.data}")
 
-    def find_pattern(self):
-        models = []
+    def calculate_frequencies(self):
+        frequencies = []
         for i in range(self.data.shape[1]):
-            X = np.arange(len(self.data)).reshape(-1, 1)
-            y = self.data[:, i]
-            model = LinearRegression()
-            model.fit(X, y)
-            models.append(model)
-        return models
+            counts = np.bincount(self.data[:, i])
+            frequencies.append(counts / np.sum(counts))
+        return frequencies
 
-    def predict_next(self, n=1):
-        models = self.find_pattern()
-        X_new = np.arange(len(self.data), len(self.data) + n).reshape(-1, 1)
-        y_new = np.zeros((n, self.data.shape[1]))
-        for i, model in enumerate(models):
-            y_new[:, i] = model.predict(X_new)
-        
-        # Constrain predictions to the required ranges
-        y_new[:, :-1] = np.clip(y_new[:, :-1], 1, 69)  # First five numbers between 1 and 69
-        y_new[:, -1] = np.clip(y_new[:, -1], 1, 26)   # Last number between 1 and 26
-        
-        return np.rint(y_new).astype(int)
+    def predict_next_by_frequency(self):
+        frequencies = self.calculate_frequencies()
+        next_numbers = []
+        for freq in frequencies:
+            next_numbers.append(np.argmax(freq))
+        return next_numbers
 
 # Example usage
 if __name__ == "__main__":
@@ -57,6 +47,6 @@ if __name__ == "__main__":
 
     number_pattern = NumberPattern(initial_csv)
     number_pattern.add_data(["19,20,21,22,23,24", "25,26,27,28,29,30"])
-    next_numbers = number_pattern.predict_next(3)
-    next_numbers_str = [','.join(map(str, nums)) for nums in next_numbers]
-    print(f"Next numbers: {next_numbers_str}")
+    next_numbers = number_pattern.predict_next_by_frequency()
+    next_numbers_str = ','.join(map(str, next_numbers))
+    print(f"Next numbers by frequency: {next_numbers_str}")
